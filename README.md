@@ -1,4 +1,11 @@
 # ESP_NIXIE
+
+![Clock](/images/IMG_1239.JPG)
+
+<img src="/images/IMG_1246.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1241.JPG" alt="Clock" width="320" height="240">
+
+<img src="/images/IMG_1242.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1243.JPG" alt="Clock" width="320" height="240">
+
 This repository contains the code, and schematics for driving a Nixie tube clock with a NodeMCU 1.0 ESP8266 development board.  STL files are also provided for a 3D printed case.
 
 Building a Nixie Clock is a time honored tradition among makers, and this is yet another DIY Nixie Clock project.  This one is unique in a few respects: 1) it uses an ESP8266 development board as the microcontroller, allowing it to automatically sync its time to NIST over WiFi, and 2) it features a 3D printed frame and hand-solderable PCB.  
@@ -36,7 +43,13 @@ Most of these parts can be found on eBay or your favorite online Chinese retaile
 
 The Nixie Board PCB and tube PCBs must be manufactured by a PCB supplier.  The least expensive way to do this is to upload the gerber files (included as a .zip file) to one of several Chinese manufacturers such as SchenZhen2U, EasyEDA, or Seeed Studio.  pcbshopper.com allows a comparison between vendors.  Typical prices are $1-$3/board, with a minimum of 5 boards.  Recommended default settings are Layers: 2; PCB Thickness: 1.6mm; Surface Finish: HASL; Copper Weight: 1.  The main board is 100 x 80 mm, and the smaller tube boards are 20.7mm x 28.3mm. (Alternatively, contact me since I may still have a few extras I could send out for $5 + shipping.) 
 
+<img src="/images/IMG_1250.JPG" alt="Clock" width="320" height="240"> 
+
 Solder headers, IC sockets, terminal blocks, resistors, voltage regulator, and capacitors to the board.  The 0.33 uF capacitor goes closest to the 2-pin terminal block.  The 20K Ohm resistor is marked as optional.  This will illuminate the decimal point between the hours and minutes.  Personally, I think it looks better without it and I did not use it, but it is there if others wish to use it.  Mount ICs, and NodeMCU to the headers and sockets.  
+
+<img src="/images/IMG_1207.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1248.JPG" alt="Clock" width="320" height="240">
+
+<img src="/images/IMG_1249.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1247.JPG" alt="Clock" width="320" height="240">
 
 3D print the parts.  The top cover is printed on its side, and will need supports to prevent the tube holes from sagging.  Four tube socekts are required.  
 
