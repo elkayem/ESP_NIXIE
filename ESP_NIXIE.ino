@@ -23,7 +23,7 @@
 #include <EEPROM.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "Switch.h"
+#include <Switch.h>
 
 
 #define D0 16 // LED_BUILTIN
