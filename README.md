@@ -44,9 +44,11 @@ Mount Nixie tubes through 3D printed tube sockets, and then through the tube PCB
 
 Mount the board to the 3D printed base with M3 bolts, and the OLED and HV power supply with M2 bolts.  Mount the rotary encoder to the back of the case.  Wire the 2-pin terminal block to the 12V wall power supply, and the 3-pin terminal block to the HV power supply using loose wire.  The GND can go to either side of the HV power supply, but make sure the terminal labelled 12V goes to Vin, and terminal labelled 170V goes to HV.  Connect the OLED to the four OLED pins on the board using jumper cables.  The rotary encoder should have three pins on one side and two on the other.  Connect the three pins to the 3 ENC headers on the board, and the two pins to the 2 BTN pins on the board.  If the jumper cables on the encoder are loose, you may wish to solder them on directly.  I did.
 
-Upload the firmware to the NodeMCU board using the Arduino IDE and a micro USB cable.  There are plenty of tutorials on how to configure the Arduino IDE (such as [here](http://www.instructables.com/id/Quick-Start-to-Nodemcu-ESP8266-on-Arduino-IDE/) so I won't cover it in this Readme.
+Upload the firmware to the NodeMCU board using the Arduino IDE and a micro USB cable.  There are plenty of tutorials on how to configure the Arduino IDE (such as [here](http://www.instructables.com/id/Quick-Start-to-Nodemcu-ESP8266-on-Arduino-IDE/)) so I won't cover it in this Readme.
 
-Close the case and plug it in!  
+Glue the case side panels to the top cover.  I use plastic epoxy.  Close the case and attach on the side corners using (optional) 1/2" #4 or #6 sheet metal screws.
+
+Plug it in and enjoy!  
 
 
 
