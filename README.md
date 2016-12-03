@@ -1,8 +1,8 @@
 # ESP_NIXIE
 
-![Clock](/images/IMG_1239.JPG)
+![Clock](/images/IMG_3060.JPG)
 
-<img src="/images/IMG_1246.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1241.JPG" alt="Clock" width="320" height="240">
+<img src="/images/IMG_3056.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1241.JPG" alt="Clock" width="320" height="240">
 
 <img src="/images/IMG_1242.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1243.JPG" alt="Clock" width="320" height="240">
 
@@ -10,7 +10,7 @@ This repository contains the code, and schematics for driving a Nixie tube clock
 
 Building a Nixie Clock is a time honored tradition among makers, and this is yet another DIY Nixie Clock project.  This one is unique in a few respects: 1) it uses an ESP8266 development board as the microcontroller, allowing it to automatically sync its time to NIST over WiFi, and 2) it features a 3D printed frame and hand-solderable PCB.  
 
-When the clock is turned on for the first time, it will create a WiFi access point that you will need to connect to using a computer or smartphone.  The user can use this access point to specify the WiFi network SSID and password.  This information is stored in EEPROM, so will not be needed the next time the clock is turned on.  It uses [Wifi Manager](https://github.com/tzapu/WiFiManager).  See the GitHub link for more information.  
+When the clock is turned on for the first time, it will create a WiFi access point that you will need to connect to using a computer or smartphone.  The user can use this access point to specify the WiFi network SSID and password.  This information is stored in EEPROM, so will not be needed the next time the clock is turned on.  It uses the Arduino [Wifi Manager](https://github.com/tzapu/WiFiManager) to create the access point.  See the GitHub link for more information.  
 
 The OLED screen and rotary encoder are used to specify the time offset from UTC time.  Pressing the encoder button accesses the menu-driven settings.  This offset is stored in EEPROM.  The settings menu is also used to enable auto-daylight savings time adjustment.  It assumes the current US daylight savings time rules.  If the auto adjustment isn't enabled, the UTC time offset will need to be updated anytime DST begins or ends.  
 
