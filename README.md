@@ -1,10 +1,10 @@
 # ESP_NIXIE
 
-![Clock](/images/IMG_3060.JPG)
+![Clock](/images/IMG_3060.jpg)
 
 <img src="/images/IMG_3056.jpg" alt="Clock" width="320" height="240"> <img src="/images/IMG_1241.JPG" alt="Clock" width="320" height="240">
 
-<img src="/images/IMG_1242.jpg" alt="Clock" width="320" height="240"> <img src="/images/IMG_1243.JPG" alt="Clock" width="320" height="240">
+<img src="/images/IMG_1242.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1243.JPG" alt="Clock" width="320" height="240">
 
 This repository contains the code, and schematics for driving a Nixie tube clock with a NodeMCU 1.0 ESP8266 development board.  STL files are also provided for a 3D printed case.
 
