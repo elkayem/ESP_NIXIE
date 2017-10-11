@@ -14,6 +14,8 @@ When the clock is turned on for the first time, it will create a WiFi access poi
 
 The OLED screen and rotary encoder are used to specify the time offset from UTC time.  Pressing the encoder button accesses the menu-driven settings.  This offset is stored in EEPROM.  The settings menu is also used to enable auto-daylight savings time adjustment.  It assumes the current US daylight savings time rules.  If the auto adjustment isn't enabled, the UTC time offset will need to be updated anytime DST begins or ends.  
 
+**Please PM me if you would like a set of printed circuit boards.** I have enough extras to make a few more ESP Nixie clocks. You will need to purchase the ICs and other components, but those can easily be found on eBay, Amazon, and all the other usual places. I'm not trying to make money off of this project, so can offer the main board and four Nixie tube boards for a small amount (let's say $10). I even have a few extra NodeMCU ESP8266 boards, and can throw one in for $5 more. 
+
 ## Parts
 * NodeMCU V1.0 (Amica board).  Clone boards often are unofficially labeled as V2
 * 4 IN-14 Nixie Tubes
