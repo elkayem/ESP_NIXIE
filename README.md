@@ -61,6 +61,8 @@ Mount the board to the 3D printed base with M3 bolts, and the OLED and HV power 
 
 Upload the firmware to the NodeMCU board using the Arduino IDE and a micro USB cable.  There are plenty of tutorials on how to configure the Arduino IDE (such as [here](http://www.instructables.com/id/Quick-Start-to-Nodemcu-ESP8266-on-Arduino-IDE/)) so I won't cover it in this Readme.  I've included the binary file (ESP_NIXIE.ino.nodemcu.bin) for convenience, as well as the source code (ESP_NIXIE.ino).  If compiling from the source code, note that a number of libraries are required, most of which can be installed through the Arduino Library Manager.  Specifically, you will need NTPClient, Adafruit GFX, Adafruit SSD1306, EEPROM, ESP8266WiFi, Time, Wifi, WifiManager, and Wire.  In addition, you will need the Timezone library that is not available in the Library Manager, but must be manually installed by adding it to the Arduino libraries folder.  Timezone can be found [here](https://github.com/JChristensen/Timezone).  Finally, you will need a copy of Albert van Dalen's terrific Switch library, found [here](https://github.com/blackketter/Switch).  
 
+**Important Note if recompiling firmware:** In the file Adafruit_SSD1306.h (found in the folder Arduino\libraries\Adafruit_SSD1306, where "Arduino" is your top level Arduino directory), uncomment the line #define SSD1306_128_64, and comment out all other displays. If you don't do the above step, the library will assume you are using a 32-pixel display and the displayed text will not fit on the screen.
+
 Glue the case side panels to the top cover.  I use plastic epoxy.  Close the case and attach on the side corners using (optional) 1/2" #4 or #6 sheet metal screws.
 
 Plug it in and enjoy!  
