@@ -16,7 +16,7 @@ This clock includes a menu-driven OLED screen and rotary encoder, with menu opti
 * *Set UTC Offset.*  The user's local time zone is selected by adjusting the time offset from UTC time.
 * *Auto DST.* This option enables/disables automatic daylight savings time.  The code includes rules for US Daylight Savings Time (second Sunday in March at 2am to first Sunday in November at 2am).  The code can easily be modified for rules in other countries.
 * *12/24 Hours.* This option selects between 12 and 24 hour time formats.
-* *Protect Cathode.* Nixie tubes are susceptible to cathode poisoning when material from an active cathode sputters on the inactive cathodes.  This process can be reversed by occasionally through all numbers for short durations.  When enabled, this feature will randomly cycle through all the numbers at a 10 Hz rate for 5 seconds.  Besides protecting the cathodes, it also looks cool.  Time intervals ranging from 15 minutes to two hours can be selected.
+* *Protect Cathode.* Nixie tubes are susceptible to cathode poisoning when material from an active cathode sputters on the inactive cathodes.  This process can be reversed by occasionally cycling through all numbers for short durations.  When enabled, this feature will randomly cycle through all the numbers at a 10 Hz rate for 5 seconds.  Besides protecting the cathodes, it also looks cool.  Time intervals ranging from 15 minutes to two hours can be selected.
 * *Auto Shutoff.* When enabled, this feature will automatically turn off the tubes between designated hours (e.g., during the night), helping to preserve Nixie tube life.  The off and on times are selectable through a submenu.
 * *Show Zero.* This option allows the user to select whether the left most Nixie tube (tens place for the hour) should be turned off when it is zero, or whether zero should be shown.  
 * *Reset Wifi.*  Selecting this will cause the ESP8266 to forget the current WiFi network.  The clock will reboot and set up a new WiFi access point at ESPNIXIE.   
@@ -68,7 +68,7 @@ Mount the board to the 3D printed base with M3 bolts, and the OLED and HV power 
 
 Flash software to ESP8266 using a micro-USB cable.  This can be done one of two ways: a) Use the compiled .bin files included in the repository, or b) compile and flash the firmware using the Arduino IDE.  For upload, I recommend using esptool at https://github.com/espressif/esptool to flash the esp8266.  After installing esptool, the following line is used to flash the ESP8266:
 
-    `esptool.py --port COM6 write_flash 0x0000 ESP_NIXIE.ino.nodemcu.bin`
+`esptool.py --port COM6 write_flash 0x0000 ESP_NIXIE.ino.nodemcu.bin`
   
 where COM6 should be replaced by whatever com port your device is plugged into. (In Windows, this is discoverable using the Device Monitor.) 
 
