@@ -474,7 +474,7 @@ void updateSelection() { // Called whenever encoder is turned
     case SETTINGS1:
       display.setCursor(0,0); 
       display.setTextColor(WHITE,BLACK);
-      display.print("SETTINGS");
+      display.print("SETTINGS (1 of 2)");
       display.setCursor(0,16);
       
       if (menu == SETTINGS1) setHighlight(0,5);
@@ -516,7 +516,7 @@ void updateSelection() { // Called whenever encoder is turned
     case SETTINGS2:
       display.setCursor(0,0); 
       display.setTextColor(WHITE,BLACK);
-      display.print("SETTINGS");
+      display.print("SETTINGS (2 of 2)");
       display.setCursor(0,16);
       
       if (menu == SETTINGS2) setHighlight(0,5);
