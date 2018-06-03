@@ -201,24 +201,25 @@ void loop() {
   timeClient.update();
   setTime(myTZ.toLocal(timeClient.getEpochTime()));
 
-  // At the first top of the hour, initialize cathode protection logic timer
-  if (!initProtectionTimer && (minute() == 0) && interval_indx > 0) {  
-    protectTimer = 0;   // Ensures protection logic will be immediately triggered                                     
-    initProtectionTimer = true;
+  // Cathode protection logic
+  if (interval_indx > 0) {  // Cathode protection is enabled
+     // At the first top of the hour, initialize cathode protection logic timer
+     if (!initProtectionTimer && (minute() == 0)) {  
+      protectTimer = 0;   // Ensures protection logic will be immediately triggered                                     
+      initProtectionTimer = true;
+    }
+    if ((now() - protectTimer) >= 60 * intervals[interval_indx]) {
+      protectTimer = now();
+      if (nixieOn) cathodeProtect();
+    }
   }
   
   static time_t prevTime = 0;
   if (now() != prevTime) {
     prevTime = now();
     evalShutoffTime();
-    if (interval_indx > 0) // Cathode protection is enabled
-      if ((prevTime - protectTimer) > 60 * intervals[interval_indx]) {
-        if (nixieOn) cathodeProtect();
-        protectTimer = prevTime;
-      }
     displayTime();
   }
-
 
   if ((now() - menuTimer > 60) && (menu != TOP)) { // Reset screen to top level if encoder inactive for more than 60 seconds
     menu = TOP;
@@ -235,7 +236,8 @@ void cathodeProtect() {
 
   // All four digits will increment up at 10 Hz.
   // At T=2 sec, individual digits will stop at 
-  // the correct time starting from the right and ending on the left
+  // the correct time every second starting from 
+  // the right and ending on the left
   for (int i = 0; i <= 50; i++){
     if (i >= 20) dm2 = (minBcd & 15); 
     if (i >= 30) dm1 = (minBcd >> 4); 
