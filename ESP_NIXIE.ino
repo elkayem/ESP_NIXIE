@@ -99,6 +99,7 @@ int autoShutoffOfftime, autoShutoffOntime;  // On and off times from 0 to 95 in 
 
 time_t protectTimer = 0, menuTimer = 0;
 bool nixieOn = true;
+bool initProtectionTimer = false;  // Set true at the top of the hour to synchronize protection timer with clock
 
 void setup() {
   pinMode(dataPin, OUTPUT);
@@ -200,6 +201,12 @@ void loop() {
   timeClient.update();
   setTime(myTZ.toLocal(timeClient.getEpochTime()));
 
+  // At the first top of the hour, initialize cathode protection logic timer
+  if (!initProtectionTimer && (minute() == 0) && interval_indx > 0) {  
+    protectTimer = 0;   // Ensures protection logic will be immediately triggered                                     
+    initProtectionTimer = true;
+  }
+  
   static time_t prevTime = 0;
   if (now() != prevTime) {
     prevTime = now();
@@ -220,14 +227,31 @@ void loop() {
 }
 
 void cathodeProtect() {
+  int hour12_24 = set12_24 ? (unsigned char)hour() : (unsigned char)hourFormat12();
+  unsigned char hourBcd = decToBcd((unsigned char)hour12_24);
+  unsigned char minBcd  = decToBcd((unsigned char)minute());
+  unsigned char dh1 = (hourBcd >> 4), dh2 = (hourBcd & 15); 
+  unsigned char dm1 = (minBcd >> 4),  dm2 = (minBcd & 15);
+
+  // All four digits will increment up at 10 Hz.
+  // At T=2 sec, individual digits will stop at 
+  // the correct time starting from the right and ending on the left
   for (int i = 0; i <= 50; i++){
+    if (i >= 20) dm2 = (minBcd & 15); 
+    if (i >= 30) dm1 = (minBcd >> 4); 
+    if (i >= 40) dh2 = (hourBcd & 15);
+    if (i == 50) dh1 = (hourBcd >> 4);
     digitalWrite(latchPin, LOW);
-    shiftOut(dataPin, clockPin, MSBFIRST, decToBcd((unsigned char)(rand()%100)));
-    shiftOut(dataPin, clockPin, MSBFIRST, decToBcd((unsigned char)(rand()%100)));
+    shiftOut(dataPin, clockPin, MSBFIRST, (dh1 << 4) | dh2);
+    shiftOut(dataPin, clockPin, MSBFIRST, (dm1 << 4) | dm2);
     digitalWrite(latchPin, HIGH);
+    incMod10(dh1); incMod10(dh2);
+    incMod10(dm1); incMod10(dm2);
     delay(100);
   }
 }
+
+inline void incMod10(unsigned char &x) { x = (x + 1 == 10 ? 0: x + 1); };
 
 void displayTime(){
    char tod[10], time_str[20], date_str[20];
@@ -391,7 +415,8 @@ void updateMenu() {  // Called whenever button is pushed
     case CATHODE_PROTECT: 
       EEPROM.write(EEPROM_addr_protect, interval_indx);
       EEPROM.commit();
-      protectTimer = 0;  // Triggers immediate cathode protection
+      initProtectionTimer = false;
+      protectTimer = 0;
       menu = SETTINGS2;
       break;
       
@@ -679,7 +704,7 @@ void setHighlight(int menuItem, int numMenuItems) {
   }
 }
 
-int mod(int a, int b)
+inline int mod(int a, int b)
 {
     int r = a % b;
     return r < 0 ? r + b : r;
