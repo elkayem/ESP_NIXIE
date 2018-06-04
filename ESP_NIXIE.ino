@@ -203,14 +203,16 @@ void loop() {
 
   // Cathode protection logic
   if (interval_indx > 0) {  // Cathode protection is enabled
-     // At the first top of the hour, initialize cathode protection logic timer
-     if (!initProtectionTimer && (minute() == 0)) {  
-      protectTimer = 0;   // Ensures protection logic will be immediately triggered                                     
-      initProtectionTimer = true;
-    }
-    if ((now() - protectTimer) >= 60 * intervals[interval_indx]) {
-      protectTimer = now();
-      if (nixieOn) cathodeProtect();
+    if ((menu != SET_UTC_OFFSET) && (menu != ENABLE_DST)) { // Changing UTC offset or DST setting can disrupt protection timer
+      // At the first top of the hour, initialize cathode protection logic timer
+      if (!initProtectionTimer && (minute() == 0)) {  
+        protectTimer = 0;   // Ensures protection logic will be immediately triggered                                     
+        initProtectionTimer = true;
+      }
+      if ((now() - protectTimer) >= 60 * intervals[interval_indx]) {
+        protectTimer = now();
+        if (nixieOn) cathodeProtect();
+      }      
     }
   }
   
@@ -222,8 +224,13 @@ void loop() {
   }
 
   if ((now() - menuTimer > 60) && (menu != TOP)) { // Reset screen to top level if encoder inactive for more than 60 seconds
-    menu = TOP;
-    updateSelection();
+    if ((menu == SET_UTC_OFFSET) || (menu == ENABLE_DST)) {
+      menuTimer = now(); // Changing UTC offset or DST setting can disrupt menu timer  
+    }
+    else {
+      menu = TOP;
+      updateSelection();      
+    }
   }
 }
 
@@ -399,12 +406,14 @@ void updateMenu() {  // Called whenever button is pushed
     case SET_UTC_OFFSET:
       EEPROM.write(EEPROM_addr_UTC_offset, (unsigned char)(mod(mySTD.offset/60,24))); 
       EEPROM.commit();
-      menu = TOP;
+      initProtectionTimer = false;
+      menu = SETTINGS1;
       break;
       
     case ENABLE_DST:
       EEPROM.write(EEPROM_addr_DST, (unsigned char)enableDST);
       EEPROM.commit();
+      initProtectionTimer = false;
       menu = SETTINGS1; 
       break;
       
