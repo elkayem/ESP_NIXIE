@@ -57,7 +57,11 @@ Timezone myTZ(myDST, mySTD);
 #define OLED_RESET  LED_BUILTIN
 Adafruit_SSD1306 display(OLED_RESET);
 
-Switch encoderButton = Switch(encoderButtonPin, INPUT_PULLUP);
+const int debouncePeriod = 50;
+const int longPressPeriod = 3000;  // Set longPressPeriod to 3 seconds.  Will manually turn on/off Nixies if button held for longer than 3 sec.
+Switch encoderButton = Switch(encoderButtonPin, INPUT_PULLUP, LOW, debouncePeriod, longPressPeriod);
+
+ 
 int encoderPos, encoderPosPrev;
 
 enum Menu {
@@ -187,6 +191,13 @@ void loop() {
   updateEncoderPos();
   encoderButton.poll();
 
+  // If button held for longer than 3 seconds, toggle Nixie tubes on/off
+  if (encoderButton.longPress()){
+    nixieOn = !nixieOn;
+    menu = TOP;
+    updateSelection();  
+  }
+
   static bool initial_loop = 1;
   if (encoderButton.pushed()) {
     menuTimer = now();  
@@ -222,15 +233,12 @@ void loop() {
     evalShutoffTime();
     displayTime();
   }
-
-  if ((now() - menuTimer > 60) && (menu != TOP)) { // Reset screen to top level if encoder inactive for more than 60 seconds
-    if ((menu == SET_UTC_OFFSET) || (menu == ENABLE_DST)) {
-      menuTimer = now(); // Changing UTC offset or DST setting can disrupt menu timer  
-    }
-    else {
-      menu = TOP;
-      updateSelection();      
-    }
+  // Reset screen to top level if encoder inactive for more than 60 seconds
+  // Note that UTC offset and DST setting changes can change now() by one hour
+  // (3600 seconds), so modulus operator is needed
+  if ((mod(now() - menuTimer, 3600) > 60) && (menu != TOP)) { 
+    menu = TOP;
+    updateSelection();      
   }
 }
 
@@ -318,7 +326,7 @@ void formattedTime(char *tod, int hours, int minutes, int seconds)
 }
 
 void evalShutoffTime() {  // Determine whether Nixie tubes should be turned off
-  nixieOn = true;
+  static bool prevShutoffState = true;
   
   if (!enableAutoShutoff) return;
   
@@ -326,8 +334,19 @@ void evalShutoffTime() {  // Determine whether Nixie tubes should be turned off
   int mn_on = 15*autoShutoffOntime;  
   int mn_off = 15*autoShutoffOfftime;
 
-  if ( ((mn_off < mn_on) &&  (mn > mn_off) && (mn < mn_on)) ||
-        (mn_off > mn_on) && ((mn > mn_off) || (mn < mn_on))) nixieOn = false;
+  // Note, we only toggle the nixieOn state when transitioning in and out of shutoff period, 
+  // in case the nixies have been manually turned on or off
+  if ( ((mn_off < mn_on) &&  (mn > mn_off) && (mn < mn_on)) ||  // If True, we are in shutoff period
+        (mn_off > mn_on) && ((mn > mn_off) || (mn < mn_on))) { 
+     //  If we were outside the shutoff period the last time we checked, then turn nixies off
+     if (prevShutoffState = true) nixieOn = false;  
+     prevShutoffState = false;
+  }
+  else {  // We are outside the shutoff period
+    //  If we were in the shutoff period the last time we checked, then turn nixies back on
+    if (prevShutoffState = false) nixieOn = true;
+    prevShutoffState = true;
+  }
     
 }
 
@@ -539,8 +558,8 @@ void updateSelection() { // Called whenever encoder is turned
 
     case CATHODE_PROTECT: 
       if (encoderPos == 0 && encoderPosPrev == 0) // Encoder position was initialized
-        encoderPos = interval_indx % num_intervals;
-      interval_indx = encoderPos % num_intervals;
+        encoderPos = interval_indx;
+      interval_indx = mod(encoderPos, num_intervals);
       // No break statement, continue through next case
         
     case SHOW_ZERO: 

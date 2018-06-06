@@ -21,6 +21,8 @@ This clock includes a menu-driven OLED screen and rotary encoder, with menu opti
 * *Show Zero.* This option allows the user to select whether the left most Nixie tube (tens place for the hour) should be turned off when it is zero, or whether zero should be shown.  
 * *Reset Wifi.*  Selecting this will cause the ESP8266 to forget the current WiFi network.  The clock will reboot and set up a new WiFi access point at ESPNIXIE.   
 
+In addition to these settings, holding the rotary encoder button down for more than three seconds will manually toggle the Nixie tubes on and off.  If the Auto Shutoff feature is enabled, the Nixies will stay on or off as selected until the next Auto Shutoff transition occurs, after which the Nixie tubes will turn on and off according to the Auto Shutoff schedule.
+
 **Please PM me if you would like a set of printed circuit boards.** I have enough extras to make a few more ESP Nixie clocks. You will need to purchase the ICs and other components, but those can easily be found on eBay, Amazon, and all the other usual places. I'm not trying to make money off of this project, so can offer the main board and four Nixie tube boards for a small amount (let's say $10). I even have a few extra NodeMCU ESP8266 boards, and can throw one in for $5 more. 
 
 ## Parts
