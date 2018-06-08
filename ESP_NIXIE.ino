@@ -102,7 +102,7 @@ bool enableAutoShutoff; // Flag to enable/disable nighttime shut off
 int autoShutoffOfftime, autoShutoffOntime;  // On and off times from 0 to 95 in 15 minute intervals
 
 time_t protectTimer = 0, menuTimer = 0;
-bool nixieOn = true;
+bool nixieOn = true, manualOverride = false;
 bool initProtectionTimer = false;  // Set true at the top of the hour to synchronize protection timer with clock
 
 void setup() {
@@ -186,16 +186,17 @@ void setup() {
   setTime(myTZ.toLocal(timeClient.getEpochTime()));
   displayTime();
 }
-  
+
 void loop() {  
   updateEncoderPos();
   encoderButton.poll();
 
   // If button held for longer than 3 seconds, toggle Nixie tubes on/off
   if (encoderButton.longPress()){
+    manualOverride = true;  // Overrides auto shutoff for this period
     nixieOn = !nixieOn;
     menu = TOP;
-    updateSelection();  
+    updateSelection(); 
   }
 
   static bool initial_loop = 1;
@@ -326,7 +327,6 @@ void formattedTime(char *tod, int hours, int minutes, int seconds)
 }
 
 void evalShutoffTime() {  // Determine whether Nixie tubes should be turned off
-  static bool prevShutoffState = true;
   
   if (!enableAutoShutoff) return;
   
@@ -334,17 +334,16 @@ void evalShutoffTime() {  // Determine whether Nixie tubes should be turned off
   int mn_on = 15*autoShutoffOntime;  
   int mn_off = 15*autoShutoffOfftime;
 
-  // Note, we only toggle the nixieOn state when transitioning in and out of shutoff period, 
-  // in case the nixies have been manually turned on or off
-  if ( ((mn_off < mn_on) &&  (mn > mn_off) && (mn < mn_on)) ||  // If True, we are in shutoff period
+  static bool prevShutoffState = true;  
+  if ( ((mn_off < mn_on) &&  (mn > mn_off) && (mn < mn_on)) ||  // Nixies should be off
         (mn_off > mn_on) && ((mn > mn_off) || (mn < mn_on))) { 
-     //  If we were outside the shutoff period the last time we checked, then turn nixies off
-     if (prevShutoffState = true) nixieOn = false;  
+     if (!manualOverride) nixieOn = false;
+     if (prevShutoffState == true) manualOverride = false; 
      prevShutoffState = false;
   }
-  else {  // We are outside the shutoff period
-    //  If we were in the shutoff period the last time we checked, then turn nixies back on
-    if (prevShutoffState = false) nixieOn = true;
+  else {  // Nixies should be on
+    if (!manualOverride) nixieOn = true;
+    if (prevShutoffState == false) manualOverride = false; 
     prevShutoffState = true;
   }
     
