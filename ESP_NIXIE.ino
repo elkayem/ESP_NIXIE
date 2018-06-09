@@ -721,6 +721,7 @@ void fifteenMinToHM(int &hours, int &minutes, int fifteenMin)
 void resetWiFi(){
   WiFiManager MyWifiManager;
   MyWifiManager.resetSettings();
+  delay(1000);
   ESP.restart();
 }
 
