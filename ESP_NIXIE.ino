@@ -1,6 +1,6 @@
 /* 
  *    ESP Nixie Clock 
- *	  Copyright (C) 2018  Larry McGovern
+ *	  Copyright (C) 2019  Larry McGovern
  *	
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <Adafruit_SSD1306.h>
 #include <avdweb_Switch.h>
 
+//#define CLOCK_COLON //  Uncomment if using a colon circuit connected to pin D8
 
 #define D0 16 // LED_BUILTIN
 #define D1 5 // I2C Bus SCL (clock)
@@ -46,6 +47,8 @@ const int encoderPinA = D9;
 const int encoderPinB = D10;
 const int encoderButtonPin = D0;
 
+const int colonPin = D8;
+
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "time.nist.gov", 0, 7200000); // Update time every two hours
 
@@ -55,7 +58,9 @@ TimeChangeRule mySTD = {"STD", First, Sun, Nov, 2, 0};
 Timezone myTZ(myDST, mySTD);
 
 #define OLED_RESET  LED_BUILTIN
-Adafruit_SSD1306 display(OLED_RESET);
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 const int debouncePeriod = 50;
 const int longPressPeriod = 3000;  // Set longPressPeriod to 3 seconds.  Will manually turn on/off Nixies if button held for longer than 3 sec.
@@ -71,6 +76,7 @@ enum Menu {
   SET_UTC_OFFSET,
   ENABLE_DST,
   SET_12_24,
+  BLINK_COLON,
   CATHODE_PROTECT,
   AUTO_SHUTOFF,
   AUTO_SHUTOFF_ENABLE,
@@ -89,10 +95,12 @@ const int EEPROM_addr_shutoff_en  = 4;
 const int EEPROM_addr_shutoff_off = 5;
 const int EEPROM_addr_shutoff_on  = 6;
 const int EEPROM_addr_showzero    = 7;
+const int EEPROM_addr_blink_colon = 8;
 
-bool enableDST;  // Flag to enable DST
-bool set12_24;   // Flag indicating 12 vs 24 hour time (0 = 12, 1 = 24);
-bool showZero;   // Flag to indicate whether to show zero in the hour ten's place
+bool enableDST;   // Flag to enable DST
+bool set12_24;    // Flag indicating 12 vs 24 hour time (0 = 12, 1 = 24);
+bool showZero;    // Flag to indicate whether to show zero in the hour ten's place
+bool enableBlink; // Flag to indicate whether center colon should blink
 
 uint8_t interval_indx; // Cathode protection interval index
 const int num_intervals = 6;
@@ -111,6 +119,7 @@ void setup() {
   pinMode(clockPin, OUTPUT); 
   pinMode(encoderPinA, INPUT_PULLUP);
   pinMode(encoderPinB, INPUT_PULLUP);
+  pinMode(colonPin, OUTPUT);
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // OLED I2C Address, may need to change for different device,
                                               // Check with I2C_Scanner
@@ -129,7 +138,7 @@ void setup() {
     // Setup WiFiManager
   WiFiManager MyWifiManager;
   MyWifiManager.setAPCallback(configModeCallback);
-  MyWifiManager.autoConnect("ESPCLOCK");
+  MyWifiManager.autoConnect("ESPCLOCK","PASSWORD"); // Default password is PASSWORD, change as needed
   
   display.clearDisplay();
   display.setCursor(0,0);
@@ -147,7 +156,7 @@ void setup() {
     display.display();
   }
 
-  EEPROM.begin(8);
+  EEPROM.begin(9);
   
   // Read UTC offset from EEPROM
   int utc_offset = (((int)EEPROM.read(EEPROM_addr_UTC_offset)+12) % 24) - 12;
@@ -178,6 +187,9 @@ void setup() {
 
   // Read show zero setting from EEPROM
   showZero = EEPROM.read(EEPROM_addr_showzero) != 0;
+
+  // Read colon blink setting from EEPROM
+  enableBlink = EEPROM.read(EEPROM_addr_blink_colon) != 0;
   
   menu = TOP;
   updateSelection();
@@ -278,6 +290,7 @@ void displayTime(){
    int hour12_24 = set12_24 ? (unsigned char)hour() : (unsigned char)hourFormat12();
    unsigned char hourBcd = decToBcd((unsigned char)hour12_24);
    unsigned char minBcd  = decToBcd((unsigned char)minute());
+   bool colonBlinkState = (bool)(second() % 2);
 
    if (!showZero && ((hourBcd >> 4) == 0)) { // If 10's digit is zero, we don't want to display a zero
     hourBcd |= (15 << 4); 
@@ -286,6 +299,10 @@ void displayTime(){
    if (!nixieOn) {
     hourBcd = 255; 
     minBcd = 255;
+    colonBlinkState = false;
+   }
+   else if (!enableBlink) {
+    colonBlinkState = true;
    }
    
    // Write to shift register
@@ -294,6 +311,8 @@ void displayTime(){
    shiftOut(dataPin, clockPin, MSBFIRST, minBcd);
    digitalWrite(latchPin, HIGH);   
 
+   digitalWrite(colonPin, colonBlinkState); // Blink colon pin
+   
    if ((menu == TOP) || (menu == SET_UTC_OFFSET)) {
       formattedTime(tod, hour12_24, minute(), second());
       sprintf(time_str, "%s %s", tod, am_pm[isPM()]);
@@ -366,6 +385,12 @@ void updateEncoderPos() {
     encoderA_prev = encoderA;     
 }
 
+#ifdef CLOCK_COLON
+  const int n_set1 = 6;  // 6 menu items on Settings 1
+#else
+  const int n_set1 = 5;  // Otherwise, only 5 items
+#endif
+
 void updateMenu() {  // Called whenever button is pushed
 
   switch (menu) {
@@ -373,7 +398,7 @@ void updateMenu() {  // Called whenever button is pushed
       menu = SETTINGS1;
       break;
     case SETTINGS1:
-      switch (mod(encoderPos,5)) {
+      switch (mod(encoderPos,n_set1)) {
         case 0: // Timezone Offset
           menu = SET_UTC_OFFSET;
           break;
@@ -383,12 +408,25 @@ void updateMenu() {  // Called whenever button is pushed
         case 2: // 12/24 Hours
           menu = SET_12_24;
           break;
+          
+#ifdef CLOCK_COLON
+        case 3: // Blink Colon
+          menu = BLINK_COLON;
+          break;  
+        case 4: // More Options
+          menu = SETTINGS2;
+          break;
+        case 5: // Return
+          menu = TOP;
+          break;
+#else
         case 3: // More Options
           menu = SETTINGS2;
           break;
         case 4: // Return
           menu = TOP;
           break;
+#endif
       }
       break;
     case SETTINGS2:
@@ -439,8 +477,14 @@ void updateMenu() {  // Called whenever button is pushed
       EEPROM.write(EEPROM_addr_12_24, (unsigned char)set12_24);
       EEPROM.commit();
       menu = SETTINGS1;
-      break;
+      break; 
 
+    case BLINK_COLON:
+      EEPROM.write(EEPROM_addr_blink_colon, (unsigned char)enableBlink);
+      EEPROM.commit();
+      menu = SETTINGS1;
+      break;
+     
     case CATHODE_PROTECT: 
       EEPROM.write(EEPROM_addr_protect, interval_indx);
       EEPROM.commit();
@@ -463,7 +507,6 @@ void updateMenu() {  // Called whenever button is pushed
         case 3: 
           menu = SETTINGS2;
           break;
-
       }
       break;
       
@@ -524,6 +567,11 @@ void updateSelection() { // Called whenever encoder is turned
         set12_24 = !set12_24;
       displayTime();
       // No break statement, continue through next case
+
+     case BLINK_COLON:
+      if (menu == BLINK_COLON && encoderPos != encoderPosPrev) 
+        enableBlink = !enableBlink;
+      // No break statement, continue through next case
       
     case SETTINGS1:
       display.setCursor(0,0); 
@@ -531,27 +579,35 @@ void updateSelection() { // Called whenever encoder is turned
       display.print("SETTINGS (1 of 2)");
       display.setCursor(0,16);
       
-      if (menu == SETTINGS1) setHighlight(0,5);
+      if (menu == SETTINGS1) setHighlight(0,n_set1);
       display.println("Set UTC Offset  ");
       
-      if (menu == SETTINGS1) setHighlight(1,5);
+      if (menu == SETTINGS1) setHighlight(1,n_set1);
       display.print("Auto DST        ");  
       if (menu == ENABLE_DST) display.setTextColor(BLACK,WHITE);
       else display.setTextColor(WHITE,BLACK);
       display.println( enableDST ? "On " : "Off" );
       
-      if (menu == SETTINGS1) setHighlight(2,5);
+      if (menu == SETTINGS1) setHighlight(2,n_set1);
       else display.setTextColor(WHITE,BLACK);
       display.print("12/24 Hours     ");
       if (menu == SET_12_24) display.setTextColor(BLACK,WHITE);
       else display.setTextColor(WHITE,BLACK);
       display.println( set12_24 ? "24" : "12" );
+
+#ifdef CLOCK_COLON
+      if (menu == SETTINGS1) setHighlight(3,n_set1);
+      display.print("Blink Colon     ");  
+      if (menu == BLINK_COLON) display.setTextColor(BLACK,WHITE);
+      else display.setTextColor(WHITE,BLACK);
+      display.println( enableBlink ? "On " : "Off" );
+#endif
       
-      if (menu == SETTINGS1) setHighlight(3,5);
+      if (menu == SETTINGS1) setHighlight(n_set1-2,n_set1);
       else display.setTextColor(WHITE,BLACK);
       display.println("More Options    ");
       
-      if (menu == SETTINGS1) setHighlight(4,5);
+      if (menu == SETTINGS1) setHighlight(n_set1-1,n_set1);
       display.println("Return          ");
       break;
 
@@ -750,6 +806,3 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   display.println("in web browser");
   display.display(); 
 }
-
-
-
