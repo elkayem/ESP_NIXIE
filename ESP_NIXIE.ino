@@ -25,6 +25,9 @@
 #include <Adafruit_SSD1306.h>
 #include <avdweb_Switch.h>
 
+#define AP_NAME "ESPCLOCK"
+#define AP_PASSWORD "PASSWORD"
+
 //#define CLOCK_COLON //  Uncomment if using a colon circuit connected to pin D8
 
 #define D0 16 // LED_BUILTIN
@@ -138,7 +141,7 @@ void setup() {
     // Setup WiFiManager
   WiFiManager MyWifiManager;
   MyWifiManager.setAPCallback(configModeCallback);
-  MyWifiManager.autoConnect("ESPCLOCK","PASSWORD"); // Default password is PASSWORD, change as needed
+  MyWifiManager.autoConnect(AP_NAME,AP_PASSWORD); // Default password is PASSWORD, change as needed
   
   display.clearDisplay();
   display.setCursor(0,0);
@@ -235,6 +238,9 @@ void loop() {
       }
       if ((now() - protectTimer) >= 60 * intervals[interval_indx]) {
         protectTimer = now();
+        // The current time can drift slightly relative to the protectTimer when NIST time is updated
+        // Need to make a small adjustment to the timer to ensure it is triggered at the minute change
+        protectTimer -= ((second()+30)%60 - 30);  
         if (nixieOn) cathodeProtect();
       }      
     }
@@ -801,8 +807,11 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   display.setCursor(0,0);
   display.println("To configure Wifi,  ");
   display.println("connect to Wifi ");
-  display.println("network ESPCLOCK and");
-  display.println("open 192.168.4.1");
+  display.print("network: ");
+  display.println(AP_NAME);
+  display.print("password: ");
+  display.println(AP_PASSWORD);
+  display.println("Open 192.168.4.1");
   display.println("in web browser");
   display.display(); 
 }
