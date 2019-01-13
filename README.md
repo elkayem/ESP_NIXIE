@@ -59,9 +59,9 @@ Most of these parts can be found on eBay or your favorite online Chinese retaile
 
 The Nixie Board PCB and tube PCBs must be manufactured by a PCB supplier.  The least expensive way to do this is to upload the gerber files (included as a .zip file) to one of several Chinese manufacturers such as JLCPCB, SchenZhen2U, or Seeed Studio.  pcbshopper.com allows a comparison between vendors.  Typical prices are $1-$3/board, with a minimum of 5 boards.  Recommended default settings are Layers: 2; PCB Thickness: 1.6mm; Surface Finish: HASL; Copper Weight: 1.  The main board is 100 x 80 mm, and the smaller tube boards are 20.7mm x 28.3mm. (Alternatively, contact me since I may still have a few extras I could send out for $10 + shipping.) 
 
-<img src="/images/IMG_3482.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_3473.JPG" alt="Clock" width="320" height="240">
+<img src="/images/IMG_3482.JPG" alt="Clock" width="320"> <img src="/images/IMG_1250.JPG" alt="Clock" width="320">
 
-<img src="/images/IMG_1250.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1207.JPG" alt="Clock" width="320" height="240">
+<img src="/images/IMG_3473.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1207.JPG" alt="Clock" width="320" height="240">
 
 Solder headers, IC sockets, terminal blocks, resistors, voltage regulator, and capacitors to the board.  The 0.33 uF capacitor goes closest to the 2-pin terminal block.  The 20K Ohm resistor is marked as optional.  This will illuminate the decimal point between the hours and minutes.  Personally, I think it looks better without it and I did not use it, but it is there if others wish to use it.  Mount ICs, and NodeMCU to the headers and sockets.  
 
