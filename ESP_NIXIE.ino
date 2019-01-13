@@ -28,7 +28,7 @@
 #define AP_NAME "ESPCLOCK"
 #define AP_PASSWORD "PASSWORD"
 
-//#define CLOCK_COLON //  Uncomment if using a colon circuit connected to pin D8
+#define CLOCK_COLON //  Comment out if not using colon separator PCB
 
 #define D0 16 // LED_BUILTIN
 #define D1 5 // I2C Bus SCL (clock)
