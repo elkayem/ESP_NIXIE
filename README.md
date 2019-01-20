@@ -1,10 +1,12 @@
 # ESP_NIXIE
 
-![Clock](/images/IMG_1246.JPG)
+![Clock](/images/clock.gif)
 
-<img src="/images/IMG_3060.jpg" alt="Clock" width="320" height="240"> <img src="/images/IMG_1241.JPG" alt="Clock" width="320" height="240">
+<img src="/images/20190120-0001.jpg" alt="Clock" width="320" height="240"> <img src="/images/20190120-0002.jpg" alt="Clock" width="320" height="240">
 
-<img src="/images/IMG_1242.JPG" alt="Clock" width="320" height="240"> <img src="/images/settings.jpg" alt="Clock" width="185" height="240">
+<img src="/images/IMG_3060.jpg" alt="Clock" width="320" height="240"> <img src="/images/IMG_1246.JPG" alt="Clock" width="320" height="240"> 
+
+<img src="/images/IMG_1241.JPG" alt="Clock" width="320" height="240"> <img src="/images/IMG_1242.JPG" alt="Clock" width="320" height="240"> <img src="/images/settings.jpg" alt="Clock" width="185" height="240">
 
 This repository contains the code, and schematics for driving a Nixie tube clock with a NodeMCU 1.0 ESP8266 development board.  STL files are also provided for a 3D printed case.  Two variants of the PCB and 3D printed cases are available, a PCB and case without a colon separator circuit, and a PCB and case with a colon separator circuit.  The code is the same, with a single #define statement that can be commented to compile the option without the separator circuit.  
 
