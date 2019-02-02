@@ -8,11 +8,11 @@
 
 <img src="/images/IMG_1241.JPG" alt="Clock" width="320"> <img src="/images/IMG_1242.JPG" alt="Clock" width="320"> <img src="/images/settings.jpg" alt="Clock" width="185">
 
-This repository contains the code, and schematics for driving a Nixie tube clock with a NodeMCU 1.0 ESP8266 development board.  STL files are also provided for a 3D printed case.  Two variants of the PCB and 3D printed cases are available, a PCB and case without a colon separator circuit, and a PCB and case with a colon separator circuit.  The code is the same, with a single #define statement that can be commented to compile the option without the separator circuit.  
+Building a Nixie Clock is a time honored tradition among makers, and this is yet another DIY Nixie Clock project.  This one is unique in a few respects: 1) it uses an ESP8266 development board as the microcontroller, allowing it to automatically sync its time to NIST over WiFi, and 2) it features a 3D printed frame and hand-solderable PCB. 
 
-Building a Nixie Clock is a time honored tradition among makers, and this is yet another DIY Nixie Clock project.  This one is unique in a few respects: 1) it uses an ESP8266 development board as the microcontroller, allowing it to automatically sync its time to NIST over WiFi, and 2) it features a 3D printed frame and hand-solderable PCB.  
+This repository contains the code, and schematics for driving a Nixie tube clock with a NodeMCU 1.0 ESP8266 development board.  STL files are also provided for a 3D printed case.  Two variants of the PCB and 3D printed cases are available, a PCB and case without a colon separator circuit, and a PCB and case with a colon separator circuit.  The code is the same, with a single #define statement that can be commented to compile the option without the separator circuit.   
 
-When the clock is turned on for the first time, it will create a WiFi access point at ESPNIXIE that can be connected to using a computer or smartphone.  The user can use this access point to specify the WiFi network SSID and password.  This information is stored in EEPROM, so will not be needed the next time the clock is turned on.  It uses the Arduino [Wifi Manager](https://github.com/tzapu/WiFiManager) to create the access point.  See the GitHub link for more information.  
+When the clock is turned on for the first time, it will create a WiFi access point at ESPNIXIE that can be connected to using a computer or smartphone.  The user can use this access point to specify the WiFi network SSID and password.  This information is stored in EEPROM, so will not be needed the next time the clock is turned on.  It uses the Arduino [Wifi Manager](https://github.com/tzapu/WiFiManager) to create the access point.  
 
 This clock includes a menu-driven OLED screen and rotary encoder, with menu options described below.  All settings are stored in EEPROM so they can be used after a power cycle.
 * *Set UTC Offset.*  The user's local time zone is selected by adjusting the time offset from UTC time.
@@ -21,6 +21,7 @@ This clock includes a menu-driven OLED screen and rotary encoder, with menu opti
 * *Blink Colon.* This option is available if using a colon separator.  If enabled, it will blink the colon once per second, otherwise it will keep the colon on steady.  This option is not available if #define CLOCK_COLON is commented in the code.  
 * *Protect Cathode.* Nixie tubes are susceptible to cathode poisoning when material from an active cathode sputters on the inactive cathodes.  This process can be reversed by occasionally cycling through all numbers for short durations.  When enabled, this feature will cycle through all the numbers at a 10 Hz rate for 5 seconds.  Besides protecting the cathodes, it also looks cool.  Time intervals ranging from 15 minutes to two hours can be selected.
 * *Auto Shutoff.* When enabled, this feature will automatically turn off the tubes between designated hours (e.g., during the night), helping to preserve Nixie tube life.  The off and on times are selectable through a submenu.
+* *Screensaver.* When enabled, a screensaver will activate on the OLED if the menu has been inactive for more than 60 seconds.  OLEDs are subject to screen burn-in, and this will help alleviate that issue.
 * *Show Zero.* This option allows the user to select whether the left most Nixie tube (tens place for the hour) should be turned off when it is zero, or whether zero should be shown.  
 * *Reset Wifi.*  Selecting this will cause the ESP8266 to forget the current WiFi network.  The clock will reboot and set up a new WiFi access point at ESPNIXIE.   
 
@@ -42,7 +43,7 @@ In addition to these settings, holding the rotary encoder button down for more t
 * 4 Nixie Tube PCBs.  Files included in this repository.  This can also easily be created using a strip board.
 * 2 74HC595N shift registers
 * 4 74141N BCD to Decimal Decoders (or K155ID1 Russian equivalents)
-* 1 L7805 5V regulator
+* 1 L7805 5V regulator (an additional heat sink is recommended)
 * 1 0.33 uF capacitor
 * 1 0.1 uF capacitor
 * 1 3 Pin 5.08mm Pitch PCB Mount Screw Terminal  

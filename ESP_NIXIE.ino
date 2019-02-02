@@ -86,7 +86,9 @@ enum Menu {
   AUTO_SHUTOFF_OFFTIME,
   AUTO_SHUTOFF_ONTIME,
   SHOW_ZERO,
-  RESET_WIFI
+  RESET_WIFI,
+  ENABLE_SCREENSAVER,
+  SCREENSAVER
 } menu;
 
 // EEPROM addresses
@@ -99,11 +101,13 @@ const int EEPROM_addr_shutoff_off = 5;
 const int EEPROM_addr_shutoff_on  = 6;
 const int EEPROM_addr_showzero    = 7;
 const int EEPROM_addr_blink_colon = 8;
+const int EEPROM_addr_screensaver = 9;
 
-bool enableDST;   // Flag to enable DST
-bool set12_24;    // Flag indicating 12 vs 24 hour time (0 = 12, 1 = 24);
-bool showZero;    // Flag to indicate whether to show zero in the hour ten's place
-bool enableBlink; // Flag to indicate whether center colon should blink
+bool enableDST;         // Flag to enable DST
+bool set12_24;          // Flag indicating 12 vs 24 hour time (0 = 12, 1 = 24);
+bool showZero;          // Flag to indicate whether to show zero in the hour ten's place
+bool enableBlink;       // Flag to indicate whether center colon should blink
+bool enableScreensaver; // Flag to enable screen saver
 
 uint8_t interval_indx; // Cathode protection interval index
 const int num_intervals = 6;
@@ -116,6 +120,45 @@ time_t protectTimer = 0, menuTimer = 0;
 bool nixieOn = true, manualOverride = false;
 bool initProtectionTimer = false;  // Set true at the top of the hour to synchronize protection timer with clock
 
+// Screensaver Bitmaps
+#define INVADER_HEIGHT   16
+#define INVADER_WIDTH    24
+static const unsigned char PROGMEM invader1_bmp[] =
+{ B00000110, B00000000, B01100000,
+  B00000110, B00000000, B01100000,
+  B01100001, B10000001, B10000110,
+  B01100001, B10000001, B10000110,
+  B01100111, B11111111, B11100110,
+  B01100111, B11111111, B11100110,
+  B01111110, B01111110, B01111110,
+  B01111110, B01111110, B01111110,
+  B01111111, B11111111, B11111110,
+  B01111111, B11111111, B11111110,
+  B00011111, B11111111, B11111000,
+  B00011111, B11111111, B11111000,
+  B00000110, B00000000, B01100000,
+  B00000110, B00000000, B01100000,
+  B00011000, B00000000, B00011000,
+  B00011000, B00000000, B00011000};
+        
+static const unsigned char PROGMEM invader2_bmp[] =
+{ B00000110, B00000000, B01100000,
+  B00000110, B00000000, B01100000,
+  B00000001, B10000001, B10000000,
+  B00000001, B10000001, B10000000,
+  B00000111, B11111111, B11100000,
+  B00000111, B11111111, B11100000,
+  B00011110, B01111110, B01111000,
+  B00011110, B01111110, B01111000,
+  B01111111, B11111111, B11111110,
+  B01111111, B11111111, B11111110,
+  B01100111, B11111111, B11100110,
+  B01100111, B11111111, B11100110,
+  B01100110, B00000000, B01100110,
+  B01100110, B00000000, B01100110,
+  B00000001, B11100111, B10000000,
+  B00000001, B11100111, B10000000};
+   
 void setup() {
   pinMode(dataPin, OUTPUT);
   pinMode(latchPin, OUTPUT);
@@ -159,7 +202,7 @@ void setup() {
     display.display();
   }
 
-  EEPROM.begin(9);
+  EEPROM.begin(10);
   
   // Read UTC offset from EEPROM
   int utc_offset = (((int)EEPROM.read(EEPROM_addr_UTC_offset)+12) % 24) - 12;
@@ -193,6 +236,9 @@ void setup() {
 
   // Read colon blink setting from EEPROM
   enableBlink = EEPROM.read(EEPROM_addr_blink_colon) != 0;
+
+  // Read screensaver setting from EEPROM
+  enableScreensaver = EEPROM.read(EEPROM_addr_screensaver) != 0;
   
   menu = TOP;
   updateSelection();
@@ -200,6 +246,7 @@ void setup() {
   timeClient.update();
   setTime(myTZ.toLocal(timeClient.getEpochTime()));
   displayTime();
+  menuTimer = now();
 }
 
 void loop() {  
@@ -214,15 +261,9 @@ void loop() {
     updateSelection(); 
   }
 
-  static bool initial_loop = 1;
   if (encoderButton.pushed()) {
     menuTimer = now();  
-    if (initial_loop == 1) {
-      initial_loop = 0;  // Ignore first push
-    }
-    else {
-      updateMenu();
-    }
+    updateMenu();
    }
 
   timeClient.update();
@@ -251,13 +292,24 @@ void loop() {
     prevTime = now();
     evalShutoffTime();
     displayTime();
+    if ((menu == SCREENSAVER) && (mod(now(),3)==0)) { // Switch directions on screensaver every 3 seconds
+      long r = random(2); 
+      if (r == 0) display.startscrolldiagright(0x00, 0x07);
+      else display.startscrolldiagleft(0x00, 0x07);
+    }
   }
-  // Reset screen to top level if encoder inactive for more than 60 seconds
+  // Reset screen to screensaver (if enabled) or top level if encoder inactive for more than 60 seconds
   // Note that UTC offset and DST setting changes can change now() by one hour
   // (3600 seconds), so modulus operator is needed
-  if ((mod(now() - menuTimer, 3600) > 60) && (menu != TOP)) { 
-    menu = TOP;
-    updateSelection();      
+  if ((mod(now() - menuTimer, 3600) > 60) && (menu != SCREENSAVER)) { 
+    if (enableScreensaver) {
+      menu = SCREENSAVER;
+      updateSelection();       
+    }
+    else if (menu != TOP) {
+      menu = TOP;
+      updateSelection();     
+    } 
   }
 }
 
@@ -403,6 +455,12 @@ void updateMenu() {  // Called whenever button is pushed
     case TOP:
       menu = SETTINGS1;
       break;
+      
+    case SCREENSAVER:
+      display.stopscroll();
+      menu = SETTINGS1;
+      break;
+      
     case SETTINGS1:
       switch (mod(encoderPos,n_set1)) {
         case 0: // Timezone Offset
@@ -436,20 +494,23 @@ void updateMenu() {  // Called whenever button is pushed
       }
       break;
     case SETTINGS2:
-      switch (mod(encoderPos,5)) {
+      switch (mod(encoderPos,6)) {
         case 0: // Cathod Protection
           menu = CATHODE_PROTECT;
           break;
         case 1: // Auto Shut off
           menu = AUTO_SHUTOFF;
           break;
-        case 2: // Show Zero
+        case 2: // Enable Screensaver
+          menu = ENABLE_SCREENSAVER;
+          break;
+        case 3: // Show Zero
           menu = SHOW_ZERO;
           break;
-        case 3: // Reset Wifi
+        case 4: // Reset Wifi
           menu = RESET_WIFI;
           break;
-        case 4: // Return
+        case 5: // Return
           menu = SETTINGS1;
           break;
       }
@@ -534,6 +595,12 @@ void updateMenu() {  // Called whenever button is pushed
       menu = AUTO_SHUTOFF;
       break;
       
+    case ENABLE_SCREENSAVER: 
+      EEPROM.write(EEPROM_addr_screensaver, (unsigned char)enableScreensaver);
+      EEPROM.commit();
+      menu = SETTINGS2;
+      break;
+      
     case SHOW_ZERO: 
       EEPROM.write(EEPROM_addr_showzero, (unsigned char)showZero);
       EEPROM.commit();
@@ -552,12 +619,20 @@ void updateSelection() { // Called whenever encoder is turned
   switch (menu) {
     case TOP:
       display.setTextColor(WHITE,BLACK);
-      display.setCursor(0,0);
-      display.print("Wifi Connected");
       display.setCursor(0,56);
       display.print("Click for settings");
       break;
-      
+
+    case SCREENSAVER:  
+      display.clearDisplay();
+      display.drawBitmap(20,23, invader1_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
+      display.drawBitmap(50,23, invader2_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
+      display.drawBitmap(80,23, invader1_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
+      display.setCursor(10,42);
+      display.print("Click for settings"); 
+      display.startscrolldiagright(0x00, 0x07);
+      break;
+
     case ENABLE_DST:
       if (encoderPos != encoderPosPrev) // Encoder has turned
         enableDST = !enableDST;
@@ -623,19 +698,26 @@ void updateSelection() { // Called whenever encoder is turned
       interval_indx = mod(encoderPos, num_intervals);
       // No break statement, continue through next case
         
+    case ENABLE_SCREENSAVER: 
+      if (menu == ENABLE_SCREENSAVER && encoderPos != encoderPosPrev) {
+        enableScreensaver = !enableScreensaver;
+      }
+      // No break statement, continue through next case
+      
     case SHOW_ZERO: 
       if (menu == SHOW_ZERO && encoderPos != encoderPosPrev) {
         showZero = !showZero;
         displayTime();
       }
       // No break statement, continue through next case
+      
     case SETTINGS2:
       display.setCursor(0,0); 
       display.setTextColor(WHITE,BLACK);
       display.print("SETTINGS (2 of 2)");
       display.setCursor(0,16);
       
-      if (menu == SETTINGS2) setHighlight(0,5);
+      if (menu == SETTINGS2) setHighlight(0,6);
       display.print("Protect Cathode ");
       if (menu == CATHODE_PROTECT) display.setTextColor(BLACK,WHITE);
       else display.setTextColor(WHITE,BLACK);
@@ -644,24 +726,31 @@ void updateSelection() { // Called whenever encoder is turned
       else
         display.println(intervals[interval_indx]);
       
-      if (menu == SETTINGS2) setHighlight(1,5);
+      if (menu == SETTINGS2) setHighlight(1,6);
       else display.setTextColor(WHITE,BLACK);
       display.print("Auto Shut Off   ");
       display.setTextColor(WHITE,BLACK);
       display.println( enableAutoShutoff ? "On " : "Off" );
       
-      if (menu == SETTINGS2) setHighlight(2,5);
+      if (menu == SETTINGS2) setHighlight(2,6);
+      else display.setTextColor(WHITE,BLACK);
+      display.print("Screensaver     ");
+      if (menu == ENABLE_SCREENSAVER) display.setTextColor(BLACK,WHITE);
+      else display.setTextColor(WHITE,BLACK);
+      display.println( enableScreensaver ? "On " : "Off" );
+      
+      if (menu == SETTINGS2) setHighlight(3,6);
       else display.setTextColor(WHITE,BLACK);
       display.print("Show Zero       ");
       if (menu == SHOW_ZERO) display.setTextColor(BLACK,WHITE);
       else display.setTextColor(WHITE,BLACK);
       display.println( showZero ? "On " : "Off" );
       
-      if (menu == SETTINGS2) setHighlight(3,5);
+      if (menu == SETTINGS2) setHighlight(4,6);
       else display.setTextColor(WHITE,BLACK);
       display.println("Reset Wifi      ");
       
-      if (menu == SETTINGS2) setHighlight(4,5);
+      if (menu == SETTINGS2) setHighlight(5,6);
       display.println("Return          ");
       break;
 
