@@ -87,7 +87,7 @@ enum Menu {
   AUTO_SHUTOFF_ONTIME,
   SHOW_ZERO,
   RESET_WIFI,
-  ENABLE_SCREENSAVER,
+  SCREENSAVER_MENU,
   SCREENSAVER
 } menu;
 
@@ -107,7 +107,8 @@ bool enableDST;         // Flag to enable DST
 bool set12_24;          // Flag indicating 12 vs 24 hour time (0 = 12, 1 = 24);
 bool showZero;          // Flag to indicate whether to show zero in the hour ten's place
 bool enableBlink;       // Flag to indicate whether center colon should blink
-bool enableScreensaver; // Flag to enable screen saver
+
+uint8_t ssOption;       // Screen saver option (0=disabled, 1=scrolling image, 2=turn off OLED)
 
 uint8_t interval_indx; // Cathode protection interval index
 const int num_intervals = 6;
@@ -238,7 +239,8 @@ void setup() {
   enableBlink = EEPROM.read(EEPROM_addr_blink_colon) != 0;
 
   // Read screensaver setting from EEPROM
-  enableScreensaver = EEPROM.read(EEPROM_addr_screensaver) != 0;
+  ssOption = EEPROM.read(EEPROM_addr_screensaver);
+  if (ssOption > 2) ssOption = 0;
   
   menu = TOP;
   updateSelection();
@@ -287,24 +289,31 @@ void loop() {
     }
   }
   
-  static time_t prevTime = 0;
-  if (now() != prevTime) {
+  static time_t prevTime = 0, refreshScreensaver = 0;
+  if (now() != prevTime) { // Update time every second
     prevTime = now();
-    evalShutoffTime();
-    displayTime();
-    if ((menu == SCREENSAVER) && (mod(now(),3)==0)) { // Switch directions on screensaver every 3 seconds
-      long r = random(2); 
-      if (r == 0) display.startscrolldiagright(0x00, 0x07);
-      else display.startscrolldiagleft(0x00, 0x07);
+    evalShutoffTime();     // Check whether nixies should be turned off (Auto shutoff mode)
+    displayTime();         // Update the time displayed on nixies and on OLED
+    if (menu == SCREENSAVER) {
+      if (now() - refreshScreensaver > 1800) { // OLED bitmap occasionally can get corrupted after a few hours
+        updateSelection();                     // This will refresh screen saver bitmap every 30 minutes 
+        refreshScreensaver = now();                 
+      }
+      else if ((ssOption == 1) && (mod(now(),3)==0)) { // Switch screensaver scroll direction every 3 seconds
+        long r = random(2);  // Randomize switch between left and right
+        if (r == 0) display.startscrolldiagright(0x00, 0x07);
+        else display.startscrolldiagleft(0x00, 0x07);
+      }
     }
   }
   // Reset screen to screensaver (if enabled) or top level if encoder inactive for more than 60 seconds
   // Note that UTC offset and DST setting changes can change now() by one hour
   // (3600 seconds), so modulus operator is needed
   if ((mod(now() - menuTimer, 3600) > 60) && (menu != SCREENSAVER)) { 
-    if (enableScreensaver) {
+    if (ssOption > 0) {
       menu = SCREENSAVER;
-      updateSelection();       
+      updateSelection();
+      refreshScreensaver = now();      
     }
     else if (menu != TOP) {
       menu = TOP;
@@ -502,7 +511,7 @@ void updateMenu() {  // Called whenever button is pushed
           menu = AUTO_SHUTOFF;
           break;
         case 2: // Enable Screensaver
-          menu = ENABLE_SCREENSAVER;
+          menu = SCREENSAVER_MENU;
           break;
         case 3: // Show Zero
           menu = SHOW_ZERO;
@@ -595,10 +604,16 @@ void updateMenu() {  // Called whenever button is pushed
       menu = AUTO_SHUTOFF;
       break;
       
-    case ENABLE_SCREENSAVER: 
-      EEPROM.write(EEPROM_addr_screensaver, (unsigned char)enableScreensaver);
-      EEPROM.commit();
-      menu = SETTINGS2;
+    case SCREENSAVER_MENU: 
+      {
+        int opt = mod(encoderPos,4);
+        if (opt < 3) {
+          ssOption = (uint8_t) opt;
+          EEPROM.write(EEPROM_addr_screensaver, (unsigned char)ssOption);
+          EEPROM.commit();
+        }
+        else menu = SETTINGS2;  // Return
+      }
       break;
       
     case SHOW_ZERO: 
@@ -624,13 +639,15 @@ void updateSelection() { // Called whenever encoder is turned
       break;
 
     case SCREENSAVER:  
-      display.clearDisplay();
-      display.drawBitmap(20,23, invader1_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
-      display.drawBitmap(50,23, invader2_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
-      display.drawBitmap(80,23, invader1_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
-      display.setCursor(10,42);
-      display.print("Click for settings"); 
-      display.startscrolldiagright(0x00, 0x07);
+      if (ssOption == 1) { // show scrolling image
+        display.clearDisplay();
+        display.drawBitmap(20,23, invader1_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
+        display.drawBitmap(50,23, invader2_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
+        display.drawBitmap(80,23, invader1_bmp, INVADER_WIDTH, INVADER_HEIGHT, WHITE);
+        display.setCursor(10,42);
+        display.print("Click for settings"); 
+        display.startscrolldiagright(0x00, 0x07);
+      }
       break;
 
     case ENABLE_DST:
@@ -697,12 +714,6 @@ void updateSelection() { // Called whenever encoder is turned
         encoderPos = interval_indx;
       interval_indx = mod(encoderPos, num_intervals);
       // No break statement, continue through next case
-        
-    case ENABLE_SCREENSAVER: 
-      if (menu == ENABLE_SCREENSAVER && encoderPos != encoderPosPrev) {
-        enableScreensaver = !enableScreensaver;
-      }
-      // No break statement, continue through next case
       
     case SHOW_ZERO: 
       if (menu == SHOW_ZERO && encoderPos != encoderPosPrev) {
@@ -735,9 +746,8 @@ void updateSelection() { // Called whenever encoder is turned
       if (menu == SETTINGS2) setHighlight(2,6);
       else display.setTextColor(WHITE,BLACK);
       display.print("Screensaver     ");
-      if (menu == ENABLE_SCREENSAVER) display.setTextColor(BLACK,WHITE);
-      else display.setTextColor(WHITE,BLACK);
-      display.println( enableScreensaver ? "On " : "Off" );
+      display.setTextColor(WHITE,BLACK);
+      display.println( (ssOption > 0) ? "On " : "Off" );
       
       if (menu == SETTINGS2) setHighlight(3,6);
       else display.setTextColor(WHITE,BLACK);
@@ -858,7 +868,27 @@ void updateSelection() { // Called whenever encoder is turned
       display.println("Return          ");
       break;
       
-      break;
+    case SCREENSAVER_MENU:
+      display.setCursor(0,0);
+      display.setTextColor(WHITE,BLACK);
+      display.println("SCREENSAVER OPTIONS");
+      display.setCursor(0,16);
+      
+      setHighlight(0,4);
+      display.print("Disable            ");
+      if (ssOption == 0) display.println("* "); else display.println("  ");
+      
+      setHighlight(1,4);
+      display.print("Scrolling Image    ");
+      if (ssOption == 1) display.println("* "); else display.println("  ");
+      
+      setHighlight(2,4);
+      display.print("Turn Off OLED      ");
+      if (ssOption == 2) display.println("* "); else display.println("  ");
+      
+      setHighlight(3,4);
+      display.println("Return               ");
+      break;       
   }
   display.display(); 
 }
