@@ -1,14 +1,16 @@
 # ESP_NIXIE
 
-![Clock](/images/clock.gif)
-
-<img src="/images/20190120-0001.jpg" alt="Clock" width="400"> <img src="/images/20190120-0002.jpg" alt="Clock" width="400">
-
-<img src="/images/IMG_3060.jpg" alt="Clock" width="400"> <img src="/images/IMG_1246.JPG" alt="Clock" width="400"> 
+<img src="/images/clock.gif" alt="Clock" width="400"> <img src="/images/20190120-0002.jpg" alt="Clock" width="400">
 
 <img src="/images/IMG_1241.JPG" alt="Clock" width="320"> <img src="/images/IMG_1242.JPG" alt="Clock" width="320"> <img src="/images/settings.jpg" alt="Clock" width="185">
 
+<img src="/images/20190217-0043.jpg" alt="Clock" width="400"> <img src="/images/20190217-0008.jpg" alt="Clock" width="400"> 
+
+<img src="/images/20190217-0054.jpg" alt="Clock" width="800"> 
+
 Building a Nixie Clock is a time honored tradition among makers, and this is yet another DIY Nixie Clock project.  This one is unique in a few respects: 1) it uses an ESP8266 development board as the microcontroller, allowing it to automatically sync its time to NIST over WiFi, and 2) it features a 3D printed frame and hand-solderable PCB. 
+
+These electronics have also been incorporated into a ceramic case by the talented artist [Jackson Fyfe](https://www.jacksonfyfeceramics.com/).  The case you see pictured above is one he created for me.  Head over to his website to see a number of his other stunning Nixie case designs, which he is selling as a limited release.
 
 This repository contains the code, and schematics for driving a Nixie tube clock with a NodeMCU 1.0 ESP8266 development board.  STL files are also provided for a 3D printed case.  Two variants of the PCB and 3D printed cases are available, a PCB and case without a colon separator circuit, and a PCB and case with a colon separator circuit.  The code is the same, with a single #define statement that can be commented to compile the option without the separator circuit.   
 
