@@ -24,6 +24,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <avdweb_Switch.h>
+#include <Ticker.h>
 
 #define AP_NAME "ESPCLOCK"
 #define AP_PASSWORD "PASSWORD"
@@ -42,18 +43,18 @@
 #define D9 3 // RX0 (Serial console) 
 #define D10 1 // TX0 (Serial console) 
 
+const int powerPin = D3;
 const int dataPin  = D5; // SER (pin 14)
 const int latchPin = D6; // RCLK (pin 12)
 const int clockPin = D7; // SRCLK (pin 11)
-
+const int colonPin = D8;
 const int encoderPinA = D9;
 const int encoderPinB = D10;
 const int encoderButtonPin = D0;
 
-const int colonPin = D8;
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "time.nist.gov", 0, 7200000); // Update time every two hours
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 7200000); // Update time every two hours
 
 // Set timezone rules.  Offsets set to zero, since they will be loaded from EEPROM
 TimeChangeRule myDST = {"DST", Second, Sun, Mar, 2, 0};    
@@ -68,7 +69,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 const int debouncePeriod = 50;
 const int longPressPeriod = 3000;  // Set longPressPeriod to 3 seconds.  Will manually turn on/off Nixies if button held for longer than 3 sec.
 Switch encoderButton = Switch(encoderButtonPin, INPUT_PULLUP, LOW, debouncePeriod, longPressPeriod);
-
+Ticker buttonTickler;
  
 int encoderPos, encoderPosPrev;
 
@@ -167,6 +168,9 @@ void setup() {
   pinMode(encoderPinA, INPUT_PULLUP);
   pinMode(encoderPinB, INPUT_PULLUP);
   pinMode(colonPin, OUTPUT);
+  pinMode(powerPin, OUTPUT);
+
+  digitalWrite(powerPin, true); // Set NCH6100HV power supply SHDN pin high (high voltage off)
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // OLED I2C Address, may need to change for different device,
                                               // Check with I2C_Scanner
@@ -245,20 +249,22 @@ void setup() {
   menu = TOP;
   updateSelection();
 
+  digitalWrite(powerPin, false); // Set NCH6100HV power supply SHDN pin low (high voltage on)
   timeClient.update();
   setTime(myTZ.toLocal(timeClient.getEpochTime()));
   displayTime();
   menuTimer = now();
+  buttonTickler.attach_ms(20, buttonPoll); // Check button state every 20 msec
 }
 
 void loop() {  
   updateEncoderPos();
-  encoderButton.poll();
 
   // If button held for longer than 3 seconds, toggle Nixie tubes on/off
   if (encoderButton.longPress()){
     manualOverride = true;  // Overrides auto shutoff for this period
     nixieOn = !nixieOn;
+    digitalWrite(powerPin, !nixieOn); // Toggle NCH6100HV power supply SHDN pin 
     menu = TOP;
     updateSelection(); 
   }
@@ -423,12 +429,18 @@ void evalShutoffTime() {  // Determine whether Nixie tubes should be turned off
   static bool prevShutoffState = true;  
   if ( ((mn_off < mn_on) &&  (mn > mn_off) && (mn < mn_on)) ||  // Nixies should be off
         (mn_off > mn_on) && ((mn > mn_off) || (mn < mn_on))) { 
-     if (!manualOverride) nixieOn = false;
+     if (!manualOverride){
+      nixieOn = false;
+      digitalWrite(powerPin, true); // Set NCH6100HV power supply SHDN pin high (high voltage off)
+     }
      if (prevShutoffState == true) manualOverride = false; 
      prevShutoffState = false;
   }
   else {  // Nixies should be on
-    if (!manualOverride) nixieOn = true;
+    if (!manualOverride){
+      nixieOn = true;
+      digitalWrite(powerPin, false); // Set NCH6100HV power supply SHDN pin low (high voltage on)
+    }
     if (prevShutoffState == false) manualOverride = false; 
     prevShutoffState = true;
   }
@@ -695,6 +707,7 @@ void updateSelection() { // Called whenever encoder is turned
 
 #ifdef CLOCK_COLON
       if (menu == SETTINGS1) setHighlight(3,n_set1);
+      else display.setTextColor(WHITE,BLACK);
       display.print("Blink Colon     ");  
       if (menu == BLINK_COLON) display.setTextColor(BLACK,WHITE);
       else display.setTextColor(WHITE,BLACK);
@@ -933,4 +946,8 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   display.println("Open 192.168.4.1");
   display.println("in web browser");
   display.display(); 
+}
+
+void buttonPoll(){
+  encoderButton.poll();
 }
