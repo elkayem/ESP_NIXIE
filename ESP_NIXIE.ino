@@ -68,7 +68,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 const int debouncePeriod = 50;
 const int longPressPeriod = 3000;  // Set longPressPeriod to 3 seconds.  Will manually turn on/off Nixies if button held for longer than 3 sec.
-Switch encoderButton = Switch(encoderButtonPin, INPUT_PULLUP, LOW, debouncePeriod, longPressPeriod);
+Switch encoderButton = Switch(encoderButtonPin, INPUT, LOW, debouncePeriod, longPressPeriod);
 Ticker buttonTickler;
  
 int encoderPos, encoderPosPrev;
