@@ -4,6 +4,8 @@
 
 <img src="/images/IMG_1241.JPG" alt="Clock" width="320"> <img src="/images/IMG_1242.JPG" alt="Clock" width="320"> <img src="/images/settings.jpg" alt="Clock" width="185">
 
+<img src="/images/20200101-0010.jpg" alt="Clock" width="400"> <img src="/images/20200101-0003.jpg" alt="Clock" width="400"> 
+
 <img src="/images/20190217-0043.jpg" alt="Clock" width="400"> <img src="/images/20190217-0008.jpg" alt="Clock" width="400"> 
 
 <img src="/images/20190217-0054.jpg" alt="Clock" width="800"> 
@@ -77,7 +79,7 @@ A few recommended modifications to the board are listed below. These changes wil
 
 <img src="/images/board_mods.jpg" alt="Clock" width="400" height="400"> 
 
-**Button Pullup Resistor.** The encoder button is attached to pin D0. This button requires a 10K pullup resistor to keep D0 high when the button is not depressed.  Unfortunately, the ESP-12E module on the NodeMCU board does not have a pullup resistor on this pin. It does have an LED which can sometimes function as a pullup resistor. NodeMCU boards with a blue LED on pin D0 require the additional 10K pullup resistor, while boards with a red LED can often function without one. See above figure for suggested configuration, with the non-grounded side of the button pin connected to 3.3V via a 10K resistor. The resistor can be soldered to the back of the board.
+**Button Pullup Resistor.** The encoder button is attached to pin D0 (GPIO16). This button requires a 10K pullup resistor to keep D0 high when the button is not depressed.  Unfortunately, the ESP-12E module on the NodeMCU board does not have a pullup resistor on this pin. It does have an LED which can sometimes function as a pullup resistor, so it is possible that your NodeMCU board will work just fine without this modification. NodeMCU boards with a blue LED on pin D0 require the additional 10K pullup resistor, while boards with a red LED can often function without one. See above figure for suggested configuration, with the non-grounded side of the button pin connected to 3.3V via a 10K resistor. The resistor can be soldered to the back of the board.
 
 **Power Supply Shutdown Pin (Optional).** The auto shutoff feature will turn off the Nixie tubes at night to preserve Nixie tube life. This is primarily done by controlling the 74141N transistors. This still leaves the Nixie anodes connected to the 170V power supply, which can show a slight orange glow on the tubes visible in the dark. If using the NCH6100HV power supply, the 170V output can be completely turned off using the SHDN pin on the power supply, thereby completely eliminating the orange glow. To take advantage of this feature, solder a wire on the back side of the ESP_NIXIE board to the D3 pin, and connect the other end of the wire to the SHDN pin on the NCH6100HV. See purple wire on the above photo for pin location on the board. 
 
@@ -98,7 +100,10 @@ Glue the case side panels to the top cover.  I use plastic epoxy.  Close the cas
 
 When first powering the ESP Nixie clock, it will create a wireless access point called ESPCLOCK with default password: PASSWORD.  Connect to the wireless access point with a computer, and open 192.168.4.1 in a web browser if the configuration page does not automatically open.  This configuration page can be used to set your clock to connect to your home WiFi network.  
 
-The default access point network name and password are hardcoded in lines, which may be changed (and recompiled) as desired:
+## Special Instructions for Compiling and Flashing Firmware Using Arduino IDE
+There are a few configurable options in the code which may require recompiling. 
+
+The default access point network name and password are hardcoded in lines, which may be changed as desired:
 
 ```
 #define AP_NAME "ESPCLOCK"
@@ -111,16 +116,16 @@ To compile the code without the colon separator PCB, comment out the following l
 
 Also note that if you do not see any text at all on the screen, I2C address of the OLED screen may be incorrect.  The code uses 0x3C, which is fairly common.  The I2C_Scanner can determine if your screen has a different address.  The address in the code can be modified and recompiled as necessary.
 
-## Special Instructions for Compiling and Flashing Firmware Using Arduino IDE
+The steps to recompile and flash the firmware through the Arduino IDE are listed below.
 1. Configure Arduino IDE
    1. Install Arduino IDE 1.8.10 (or later) from arduino.cc
    2. Open File>Preferences, and enter the following URL into "Additional Board Manager URLs": http://arduino.esp8266.com/stable/package_esp8266com_index.json
-   3. Open Tools>Board>Board Manager and install the esp8266 boards.  I am currently using v2.6.3, but later versions should also work.
+   3. Open Tools>Board>Board Manager and install the esp8266 boards.  ***Important Step:*** Use the "Select Version" pull down menu to select version **2.5.2**. At the present date (1/1/2020), the latest version (2.6.3) is not reliable with this code and electronics. If you are experiencing issues with the clock failing to reconnect to your wifi network after a power cycle, you may have missed this step and need to revert to 2.5.2.
    4. In the Tools menu, configure Board: NodeMCU 1.0 (ESP-12E Module), CPU Frequency: 80 MHz, Upload Speed: 115200.
-2. Install the following libraries.  I have indicated which versions I am currently using (as of 12/23/2019), though in most cases later versions should work: NTPClient (3.2.0), WiFi (1.2.7), WiFiManager (0.15.0-beta), Time (1.6.0), Timezone (1.2.3), Adafruit_GFX (1.7.2), Adafruit_SSD1306 (2.0.3), and Switch (1.2.1).  All of these libraries are added through the Library Manager (Sketch > Include Library > Manage Libraries).   
-3. Connect the NodeMCU board to your computer using a micro USB cable, and set Tools>Port to the new port that appears.  Your computer should automatically install the driver, but if it does not, you may need to manually download and install the CP2102 driver from http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx.  **Important:** I recommend unplugging the NodeMCU from the ESP_NIXIE board before flashing. This is because the encoder pins are attached to the Serial TX and RX pins, and can interfere with communication during upload.
+2. Install the following libraries.  I have indicated which versions I am currently using (as of 1/1/2020), though in most cases later versions should work: NTPClient (3.2.0), WiFi (1.2.7), WiFiManager (0.15.0-beta), Time (1.6.0), Timezone (1.2.3), Adafruit_GFX (1.7.2), Adafruit_SSD1306 (2.0.3), and Switch (1.2.1).  All of these libraries are added through the Library Manager (Sketch > Include Library > Manage Libraries).   
+3. Connect the NodeMCU board to your computer using a micro USB cable, and set Tools>Port to the new port that appears.  Your computer should automatically install the driver, but if it does not, you may need to manually download and install the CP2102 driver from http://www.silabs.com/products/mcu/pages/usbtouartbridgevcpdrivers.aspx.  **Suggestion:** I recommend unplugging the NodeMCU from the ESP_NIXIE board before flashing. This is because the encoder pins are attached to the Serial TX and RX pins, and can interfere with communication during upload. Note these pins should be open if the rotary encoder is in a detent position, so you may still be able to get away with flashing the NodeMCU while it is still attached to the ESP_NIXIE board. Be sure to unplug it from the wall first, though!
 4. Press the Upload button to compile the sketch and upload to the NodeMCU.  The most common reason for failing to compile are an selecting the wrong board or not installing all the required libraries.
 
-
+Hope you find this useful, and please do send me a picture if you make one of these!
 
 
